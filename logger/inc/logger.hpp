@@ -60,18 +60,18 @@ namespace libcpp59 {
     class logger {
     public:
         logger();
-        logger(const std::string& output_path);
-        logger(const std::string& output_path, log_level level);
+        logger(std::string const & output_path);
+        logger(std::string const & output_path, log_level level);
 
         ~logger() = default;
 
         logger(const logger&) = delete;
         logger& operator=(const logger&) = delete;
 
-        void log(log_level level, const std::string& message, const std::source_location location = std::source_location::current());
+        void log(log_level level, std::string const & message, std::source_location const & location = std::source_location::current());
         void set_log_level(log_level level);
         void set_log_to_console();
-        void set_log_to_file(const std::string& output_path);
+        void set_log_to_file(std::string const & output_path);
 
     private:
         std::ostream* m_output;
@@ -79,6 +79,6 @@ namespace libcpp59 {
         log_level m_log_level = log_level::INFO;
         std::mutex m_mutex;
 
-        void set_log_to_file_internal(const std::string& output_path);
+        void set_log_to_file_internal(std::string const & output_path);
     };
 }

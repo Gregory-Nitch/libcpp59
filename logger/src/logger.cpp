@@ -57,17 +57,17 @@ namespace libcpp59
 
     logger::logger() : m_output(&std::cout), m_log_level(log_level::INFO) {}
 
-    logger::logger(const std::string& output_path) : m_output(&std::cout), m_log_level(log_level::INFO)
+    logger::logger(std::string const & output_path) : m_output(&std::cout), m_log_level(log_level::INFO)
     {
         set_log_to_file_internal(output_path);
     }
 
-    logger::logger(const std::string& output_path, log_level level) : m_output(&std::cout), m_log_level(level)
+    logger::logger(std::string const & output_path, log_level level) : m_output(&std::cout), m_log_level(level)
     {
         set_log_to_file_internal(output_path);
     }
 
-    void logger::log(log_level level, const std::string& message, const std::source_location location)
+    void logger::log(log_level level, std::string const & message, std::source_location const & location)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -91,13 +91,13 @@ namespace libcpp59
         m_output = &std::cout;
     }
 
-    void logger::set_log_to_file(const std::string& output_path)
+    void logger::set_log_to_file(std::string const & output_path)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         set_log_to_file_internal(output_path);
     }
 
-    void logger::set_log_to_file_internal(const std::string& output_path)
+    void logger::set_log_to_file_internal(std::string const & output_path)
     {
         std::filesystem::path path(output_path);
 
