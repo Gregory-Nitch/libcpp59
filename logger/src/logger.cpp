@@ -86,9 +86,8 @@ namespace libcpp59
 
         if (log_level::OFF != level && level >= m_log_level)
         {
-            *m_output << level_to_strings[static_cast<int>(level)]
-            << location.file_name() << ":" << location.function_name() << ":" << location.line() << ": "
-            << message << std::endl;
+            *m_output << level_to_strings[static_cast<int>(level)] << location.file_name() << ":"
+            << location.function_name() << ":" << location.line() << ": " << message << std::endl;
         }
     }
 
