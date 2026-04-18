@@ -2,13 +2,14 @@
 cmake_minimum_required(VERSION 4.3.1)
 
 #Set project name, version, description
-project(libcpp59 VERSION 1.0.0 DESCRIPTION "libcpp59 libraries" LANGUAGES C++)
+project(libcpp59 VERSION 1.0.0 DESCRIPTION "libcpp59 libraries" LANGUAGES CXX)
 
 # Standard enforcement
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Common warnings for both Debug and Release
 add_compile_options(
@@ -42,7 +43,15 @@ include(CTest)
 
 add_subdirectory(logger)
 
-
+# Add test suite with valgrind -> # -s = show suppressed errors
+add_test(NAME test_logger
+    COMMAND valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose -s
+    $<TARGET_FILE:test_logger>
+)
+set_tests_properties(test_logger
+    PROPERTIES PASS_REGULAR_EXPRESSION
+    ".*in use at exit: 0 bytes in 0 blocks.*0 errors from 0 contexts.*suppressed: 0 from 0.*"
+)
 
 
 #########################################################################

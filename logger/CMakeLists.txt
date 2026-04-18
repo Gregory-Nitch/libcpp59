@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 4.3.1)
 
 #Set project name, version, description
-project(logger VERSION 1.0.0 DESCRIPTION "libcpp59 logger" LANGUAGES C++)
+project(logger VERSION 1.0.0 DESCRIPTION "libcpp59 logger" LANGUAGES CXX)
 
 # add source to library
 add_library(logger SHARED src/logger.cpp)
