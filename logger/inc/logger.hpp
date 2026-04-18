@@ -69,6 +69,7 @@ namespace libcpp59
      * target files and can target the console.
      *
      * @m_output: Pointer to the current output stream.
+     * @m_err_output: Pointer to the current error output stream. If a file is used it points to the same file as m_output.
      * @m_output_file: Unique pointer to an output file, nullptr if pointing to std::cout.
      * @m_log_level: Current log level threshold for logging messages.
      * @m_mutex: Mutex for thread-safe logging.
@@ -97,9 +98,9 @@ namespace libcpp59
         logger(std::string const & output_path, log_level level);
 
         /***********************************************************************************************************************
-         * @brief: Default deconstructor.
+         * @brief: Deconstructor, flushes output aswell.
          **********************************************************************************************************************/
-        ~logger() = default;
+        ~logger();
 
         /***********************************************************************************************************************
          * @brief: Deleted copy constructor.
@@ -119,6 +120,11 @@ namespace libcpp59
          * @param[in] location: The location of the trace.
          **********************************************************************************************************************/
         void log(log_level level, std::string const & message, std::source_location const & location = std::source_location::current());
+
+        /***********************************************************************************************************************
+         * @brief: Used to manualy flush the log, helps prevent data loss at determined areas.
+         **********************************************************************************************************************/
+        void flush();
 
         /***********************************************************************************************************************
          * @brief: Updates the logger to the passed log level.
@@ -141,6 +147,7 @@ namespace libcpp59
 
     private:
         std::ostream* m_output; // Log target stream (console or file).
+        std::ostream* m_err_output; // Log target stream for error messages (console or file).
         std::unique_ptr<std::ofstream> m_output_file; // Log target file stream, may be null if logging to console.
         log_level m_log_level = log_level::INFO;
         std::mutex m_mutex;
@@ -151,5 +158,10 @@ namespace libcpp59
          * @param[in] output_path: Path to the target log file.
          **********************************************************************************************************************/
         void set_log_to_file_internal(std::string const & output_path);
+
+        /***********************************************************************************************************************
+         * @brief: Internal flusher, used in deconstructor to ensure output.
+         **********************************************************************************************************************/
+        void flush_internal();
     };
 }

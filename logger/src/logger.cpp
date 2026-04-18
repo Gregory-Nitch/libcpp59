@@ -67,28 +67,48 @@ namespace libcpp59
 */
 
 
-    logger::logger() : m_output(&std::cout), m_log_level(log_level::INFO)
-    {}
+    logger::logger() : m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO) {}
 
-    logger::logger(std::string const & output_path) : m_output(&std::cout), m_log_level(log_level::INFO)
+    logger::logger(std::string const & output_path) :
+    m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO)
     {
         set_log_to_file_internal(output_path);
     }
 
-    logger::logger(std::string const & output_path, log_level level) : m_output(&std::cout), m_log_level(level)
+    logger::logger(std::string const & output_path, log_level level) :
+    m_output(&std::cout), m_err_output(&std::cerr), m_log_level(level)
     {
         set_log_to_file_internal(output_path);
+    }
+
+    logger::~logger()
+    {
+        flush_internal();
     }
 
     void logger::log(log_level level, std::string const & message, std::source_location const & location)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        if (log_level::OFF != level && level >= m_log_level)
-        {
-            *m_output << level_to_strings[static_cast<int>(level)] << location.file_name() << ":"
-            << location.function_name() << ":" << location.line() << ": " << message << std::endl;
+        if (level == log_level::OFF || level < m_log_level)
+                return;
+
+        std::ostream& out = (level == log_level::ERR) ? *m_err_output : *m_output;
+
+        out << level_to_strings[static_cast<int>(level)]
+            << location.file_name() << ":"
+            << location.function_name() << ":"
+            << location.line() << ": "
+            << message << '\n';
+
+        if (level >= log_level::WARN) {
+            out.flush();
         }
+    }
+
+    void logger::flush() {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        flush_internal();
     }
 
     void logger::set_log_level(log_level level)
@@ -102,6 +122,7 @@ namespace libcpp59
         std::lock_guard<std::mutex> lock(m_mutex);
         m_output_file.reset();
         m_output = &std::cout;
+        m_err_output = &std::cerr;
     }
 
     void logger::set_log_to_file(std::string const & output_path)
@@ -134,5 +155,13 @@ namespace libcpp59
 
         m_output_file = std::move(new_file);
         m_output = m_output_file.get();
+        m_err_output = m_output_file.get();
     }
+
+    void logger::flush_internal()
+    {
+        if (m_output) m_output->flush();
+        if (m_err_output && m_err_output != m_output) m_err_output->flush();
+    }
+
 }
