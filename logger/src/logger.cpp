@@ -53,9 +53,22 @@
 
 namespace libcpp59
 {
+    /***********************************************************************************************************************
+     * @level_to_strings
+     * @brief: Set of strings that are matched by index to @log_level. Only used internally.
+     * @see log_level
+     **********************************************************************************************************************/
     static const char* level_to_strings[] = { "[DEBUG]: ", "[INFO]: ", "[WARN]: ", "[ERR]: " };
 
-    logger::logger() : m_output(&std::cout), m_log_level(log_level::INFO) {}
+/*
+************************************************************************************************************************
+- - PUBLIC FUNCTIONS - -
+************************************************************************************************************************
+*/
+
+
+    logger::logger() : m_output(&std::cout), m_log_level(log_level::INFO)
+    {}
 
     logger::logger(std::string const & output_path) : m_output(&std::cout), m_log_level(log_level::INFO)
     {
@@ -71,7 +84,8 @@ namespace libcpp59
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        if (log_level::OFF != level && level >= m_log_level) {
+        if (log_level::OFF != level && level >= m_log_level)
+        {
             *m_output << level_to_strings[static_cast<int>(level)]
             << location.file_name() << ":" << location.function_name() << ":" << location.line() << ": "
             << message << std::endl;
@@ -97,17 +111,25 @@ namespace libcpp59
         set_log_to_file_internal(output_path);
     }
 
+/*
+************************************************************************************************************************
+- - PRIVATE FUNCTIONS - -
+************************************************************************************************************************
+*/
+
     void logger::set_log_to_file_internal(std::string const & output_path)
     {
         std::filesystem::path path(output_path);
 
-        if (!path.parent_path().empty() && !std::filesystem::exists(path.parent_path())) {
+        if (!path.parent_path().empty() && !std::filesystem::exists(path.parent_path()))
+        {
             std::filesystem::create_directories(path.parent_path());
         }
 
         auto new_file = std::make_unique<std::ofstream>(output_path, std::ios::app);
 
-        if (!new_file->is_open()) {
+        if (!new_file->is_open())
+        {
             throw std::runtime_error("ERR: Failed to open log file: " + output_path);
         }
 

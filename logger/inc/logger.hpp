@@ -48,37 +48,108 @@
 ************************************************************************************************************************
 */
 
-namespace libcpp59 {
-    enum class log_level {
+namespace libcpp59
+{
+    /***********************************************************************************************************************
+     * @log_level
+     * @brief: log level used by the logger class.
+     **********************************************************************************************************************/
+    enum class log_level
+    {
         DEBUG,
         INFO,
         WARN,
         ERR,
-        OFF
+        OFF // No logs will be output.
     };
 
-    class logger {
+    /***********************************************************************************************************************
+     * @logger
+     * @brief: Simple logger that logs the message and source information based on log level and passed severity, can
+     * target files and can target the console.
+     *
+     * @m_output: Pointer to the current output stream.
+     * @m_output_file: Unique pointer to an output file, nullptr if pointing to std::cout.
+     * @m_log_level: Current log level threshold for logging messages.
+     * @m_mutex: Mutex for thread-safe logging.
+     **********************************************************************************************************************/
+    class logger
+    {
     public:
+        /***********************************************************************************************************************
+        * @brief: Default logger constructor
+        **********************************************************************************************************************/
         logger();
+
+        /***********************************************************************************************************************
+         * @brief: Constructor which takes a file output path to the constructor.
+         *
+         * @param[in] output_path: Path to the target log file..
+         **********************************************************************************************************************/
         logger(std::string const & output_path);
+
+        /***********************************************************************************************************************
+         * @brief: Constructor which takes both a log target file and a log level.
+         *
+         * @param[in] output_path: Path to the target log file.
+         * @param[in] level: The log level to set the logger to.
+         **********************************************************************************************************************/
         logger(std::string const & output_path, log_level level);
 
+        /***********************************************************************************************************************
+         * @brief: Default deconstructor.
+         **********************************************************************************************************************/
         ~logger() = default;
 
+        /***********************************************************************************************************************
+         * @brief: Deleted copy constructor.
+         **********************************************************************************************************************/
         logger(const logger&) = delete;
+
+        /***********************************************************************************************************************
+         * @brief: Deleted assignment operator.
+         **********************************************************************************************************************/
         logger& operator=(const logger&) = delete;
 
+        /***********************************************************************************************************************
+         * @brief: Logs a message.
+         *
+         * @param[in] level: Level of the message.
+         * @param[in] message: The message to log.
+         * @param[in] location: The location of the trace.
+         **********************************************************************************************************************/
         void log(log_level level, std::string const & message, std::source_location const & location = std::source_location::current());
+
+        /***********************************************************************************************************************
+         * @brief: Updates the logger to the passed log level.
+         *
+         * @param[in] level: New log level to set.
+         **********************************************************************************************************************/
         void set_log_level(log_level level);
+
+        /***********************************************************************************************************************
+         * @brief: Sets the logger to log to the console. This also clears the current held log file information if any.
+         **********************************************************************************************************************/
         void set_log_to_console();
+
+        /***********************************************************************************************************************
+         * @brief: Sets the logger to log to a file. This also clears the current held console log information if any.
+         *
+         * @param[in] output_path: Path to the target log file.
+         **********************************************************************************************************************/
         void set_log_to_file(std::string const & output_path);
 
     private:
-        std::ostream* m_output;
-        std::unique_ptr<std::ofstream> m_output_file;
+        std::ostream* m_output; // Log target stream (console or file).
+        std::unique_ptr<std::ofstream> m_output_file; // Log target file stream, may be null if logging to console.
         log_level m_log_level = log_level::INFO;
         std::mutex m_mutex;
 
+        /***********************************************************************************************************************
+         * @brief: Internal logger function to set the loger to log to the passed target file.
+         *
+         * @param[in] output_path: Path to the target log file.
+         **********************************************************************************************************************/
         void set_log_to_file_internal(std::string const & output_path);
     };
 }
