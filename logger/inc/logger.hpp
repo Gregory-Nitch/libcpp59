@@ -83,6 +83,14 @@ namespace libcpp59
         logger();
 
         /***********************************************************************************************************************
+        * @brief: Logger constructor which takes an output stream and an error output stream.
+        *
+        * @param[in] output: Pointer to the output stream (e.g., std::cout or a file stream).
+        * @param[in] err_output: Pointer to the error output stream (e.g., std::cerr or a file stream).
+        **********************************************************************************************************************/
+        logger(std::ostream* output, std::ostream* err_output);
+
+        /***********************************************************************************************************************
          * @brief: Constructor which takes a file output path to the constructor.
          *
          * @param[in] output_path: Path to the target log file..

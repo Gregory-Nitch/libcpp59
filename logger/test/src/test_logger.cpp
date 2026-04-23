@@ -33,7 +33,10 @@
 ************************************************************************************************************************
 */
 
+#include <string>
+#include <unordered_map>
 #include <cstdlib>
+#include <sstream>
 
 /*
 ************************************************************************************************************************
@@ -45,14 +48,128 @@
 
 /*
 ************************************************************************************************************************
+- - HELPERS - -
+************************************************************************************************************************
+*/
+
+/***********************************************************************************************************************
+ * @console_output_redirector
+ * @brief: Redirects std::cout to a stringstream for capturing output.
+ *
+ * @ss: The stringstream used to capture output.
+ * @out_cout_buff: The original buffer of std::cout.
+ **********************************************************************************************************************/
+class logger_output_redirector {
+public:
+    logger_output_redirector() : out_cout_buff(std::cout.rdbuf()) {}
+
+    ~logger_output_redirector() {
+        std::cout.rdbuf(out_cout_buff); // Restore original buffer
+    }
+
+    // Redirect std::cout to a stringstream
+    void redirect() {
+        std::cout.rdbuf(ss.rdbuf());
+    }
+
+    // Get the captured output
+    std::string get_output() const {
+        return ss.str();
+    }
+
+private:
+    std::stringstream ss;
+    std::streambuf* out_cout_buff;
+};
+
+/*
+************************************************************************************************************************
+- - TESTS - -
+************************************************************************************************************************
+*/
+
+int test_default_ctor_and_console(char const * test_name)
+{
+    logger_output_redirector redirector;
+    redirector.redirect();
+    int out = EXIT_SUCCESS;
+
+    libcpp59::logger logger;
+
+    logger.log(libcpp59::log_level::INFO, "This is an info message");
+    logger.log(libcpp59::log_level::DEBUG, "This debug messaage should not appear");
+
+    std::string output = redirector.get_output();
+
+    if (output.find("[INFO]: This is an info message") == std::string::npos)
+        out = EXIT_FAILURE;
+
+    return out;
+}
+
+int test_set_log_level(char const * test_name)
+{
+    int out = EXIT_SUCCESS;
+    return out;
+}
+
+int test_log_to_file(char const * test_name)
+{
+    int out = EXIT_SUCCESS;
+    return out;
+}
+
+int test_set_log_to_console(char const * test_name)
+{
+    int out = EXIT_SUCCESS;
+    return out;
+}
+
+int test_set_log_to_file(char const * test_name)
+{
+    int out = EXIT_SUCCESS;
+    return out;
+}
+
+int test_constructor_with_file_and_level(char const * test_name)
+{
+    int out = EXIT_SUCCESS;
+    return out;
+}
+
+/*
+************************************************************************************************************************
 - - START PROGRAM - -
 ************************************************************************************************************************
 */
 
 int main()
 {
-    libcpp59::logger log;
-    log.log(libcpp59::log_level::INFO, "Test log message");
+    std::unordered_map<std::string, int(*)(char const *)> tests =
+        {
+            {"test_default_ctor_and_console", test_default_ctor_and_console},
+            {"test_set_log_level", test_set_log_level},
+            {"test_log_to_file", test_log_to_file},
+            {"test_set_log_to_console", test_set_log_to_console},
+            {"test_set_log_to_file", test_set_log_to_file},
+            {"test_constructor_with_file_and_level", test_constructor_with_file_and_level},
 
- return EXIT_SUCCESS;
+        };
+    std::unordered_map<std::string, int> results;
+
+    for (const auto& [name, func] : tests)
+    {
+        std::cout << "Running test: " << name << std::endl;
+        int result = func(name.c_str());
+        if (result != EXIT_SUCCESS)
+            results[name] = result;
+    }
+
+    for (const auto& [name, result] : results)
+        std::cerr << "TEST FAILURE: " << name << std::endl;
+
+    if(!results.empty())
+        return EXIT_FAILURE;
+
+    return EXIT_SUCCESS;
 }

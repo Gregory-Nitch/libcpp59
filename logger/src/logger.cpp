@@ -69,6 +69,10 @@ namespace libcpp59
 
     logger::logger() : m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO) {}
 
+    logger::logger(std::ostream* output, std::ostream* err_output) :
+    m_output(output), m_err_output(err_output), m_log_level(log_level::INFO) {}
+
+
     logger::logger(std::string const & output_path) :
     m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO)
     {
