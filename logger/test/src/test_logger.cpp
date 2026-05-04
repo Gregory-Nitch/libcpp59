@@ -37,6 +37,8 @@
 #include <unordered_map>
 #include <cstdlib>
 #include <sstream>
+#include <format>
+#include <filesystem>
 
 /*
 ************************************************************************************************************************
@@ -48,92 +50,123 @@
 
 /*
 ************************************************************************************************************************
-- - HELPERS - -
-************************************************************************************************************************
-*/
-
-/***********************************************************************************************************************
- * @console_output_redirector
- * @brief: Redirects std::cout to a stringstream for capturing output.
- *
- * @ss: The stringstream used to capture output.
- * @out_cout_buff: The original buffer of std::cout.
- **********************************************************************************************************************/
-class logger_output_redirector {
-public:
-    logger_output_redirector() : out_cout_buff(std::cout.rdbuf()) {}
-
-    ~logger_output_redirector() {
-        std::cout.rdbuf(out_cout_buff); // Restore original buffer
-    }
-
-    // Redirect std::cout to a stringstream
-    void redirect() {
-        std::cout.rdbuf(ss.rdbuf());
-    }
-
-    // Get the captured output
-    std::string get_output() const {
-        return ss.str();
-    }
-
-private:
-    std::stringstream ss;
-    std::streambuf* out_cout_buff;
-};
-
-/*
-************************************************************************************************************************
 - - TESTS - -
 ************************************************************************************************************************
 */
 
-int test_default_ctor_and_console(char const * test_name)
+int test_default_ctor_and_console()
 {
-    logger_output_redirector redirector;
-    redirector.redirect();
     int out = EXIT_SUCCESS;
+    std::stringstream ss;
 
-    libcpp59::logger logger;
+    {
+        libcpp59::logger logger(&ss, &ss);
 
-    logger.log(libcpp59::log_level::INFO, "This is an info message");
-    logger.log(libcpp59::log_level::DEBUG, "This debug messaage should not appear");
+        logger.log(libcpp59::log_level::INFO, "This is an info message");
+        logger.log(libcpp59::log_level::DEBUG, "This debug messaage should not appear");
+    }
 
-    std::string output = redirector.get_output();
+    if (ss.str().find("[INFO]:") == std::string::npos)
+        out = EXIT_FAILURE;
 
-    if (output.find("[INFO]: This is an info message") == std::string::npos)
+    if (ss.str().find("[DEBUG]:") != std::string::npos)
         out = EXIT_FAILURE;
 
     return out;
 }
 
-int test_set_log_level(char const * test_name)
+int test_set_log_level()
 {
     int out = EXIT_SUCCESS;
+    std::stringstream ss;
+
+    {
+        libcpp59::logger logger(&ss, &ss);
+
+        logger.log(libcpp59::log_level::INFO, "This is an info message");
+        logger.set_log_level(libcpp59::log_level::DEBUG);
+        logger.log(libcpp59::log_level::DEBUG, "This debug messaage should also appear");
+    }
+
+    if (ss.str().find("[INFO]:") == std::string::npos)
+        out = EXIT_FAILURE;
+
+    if (ss.str().find("[DEBUG]:") == std::string::npos)
+        out = EXIT_FAILURE;
+
     return out;
 }
 
-int test_log_to_file(char const * test_name)
+int test_log_to_file()
 {
     int out = EXIT_SUCCESS;
+
+    {
+        libcpp59::logger logger("test.log");
+
+        logger.log(libcpp59::log_level::INFO, "This is an info message");
+    }
+
+    std::ifstream file("test.log");
+    std::string line;
+    if (!std::getline(file, line) || line.find("[INFO]:") == std::string::npos)
+        out = EXIT_FAILURE;
+
     return out;
 }
 
-int test_set_log_to_console(char const * test_name)
+int test_set_log_to_stream()
 {
     int out = EXIT_SUCCESS;
+
+    {
+        libcpp59::logger logger("test.log");
+        std::stringstream ss;
+        logger.set_log_to_stream(&ss, &ss);
+
+        logger.log(libcpp59::log_level::INFO, "This is an info message");
+    }
+
+    std::ifstream file("test.log");
+    std::string line;
+    if (std::getline(file, line) && line.find("[INFO]:") != std::string::npos)
+        out = EXIT_FAILURE;
+
     return out;
 }
 
-int test_set_log_to_file(char const * test_name)
+int test_set_log_to_file()
 {
     int out = EXIT_SUCCESS;
+    std::stringstream ss;
+    {
+        libcpp59::logger logger(&ss, &ss);
+        logger.set_log_to_file("test.log");
+
+        logger.log(libcpp59::log_level::INFO, "This is an info message");
+    }
+
+    if (ss.str().find("[INFO]:") != std::string::npos)
+        out = EXIT_FAILURE;
+
     return out;
 }
 
-int test_constructor_with_file_and_level(char const * test_name)
+int test_constructor_with_file_and_level()
 {
     int out = EXIT_SUCCESS;
+    {
+        libcpp59::logger logger("test.log", libcpp59::log_level::ERR);
+
+        logger.log(libcpp59::log_level::INFO, "This is an info message");
+        logger.log(libcpp59::log_level::ERR, "This is an error message");
+    }
+
+    std::ifstream file("test.log");
+    std::string line;
+    if (std::getline(file, line) && line.find("[ERR]:") == std::string::npos)
+        out = EXIT_FAILURE;
+
     return out;
 }
 
@@ -145,12 +178,12 @@ int test_constructor_with_file_and_level(char const * test_name)
 
 int main()
 {
-    std::unordered_map<std::string, int(*)(char const *)> tests =
+    std::unordered_map<std::string, int(*)(void)> tests =
         {
             {"test_default_ctor_and_console", test_default_ctor_and_console},
             {"test_set_log_level", test_set_log_level},
             {"test_log_to_file", test_log_to_file},
-            {"test_set_log_to_console", test_set_log_to_console},
+            {"test_set_log_to_stream", test_set_log_to_stream},
             {"test_set_log_to_file", test_set_log_to_file},
             {"test_constructor_with_file_and_level", test_constructor_with_file_and_level},
 
@@ -159,8 +192,9 @@ int main()
 
     for (const auto& [name, func] : tests)
     {
-        std::cout << "Running test: " << name << std::endl;
-        int result = func(name.c_str());
+        std::cout << std::format("Starting test: {}...\n", name);
+        int result = func();
+        std::filesystem::remove("test.log");
         if (result != EXIT_SUCCESS)
             results[name] = result;
     }

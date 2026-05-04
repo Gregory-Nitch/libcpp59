@@ -142,9 +142,12 @@ namespace libcpp59
         void set_log_level(log_level level);
 
         /***********************************************************************************************************************
-         * @brief: Sets the logger to log to the console. This also clears the current held log file information if any.
+         * @brief: Sets the logger to log to the given streams. This also clears the current held log file information if any.
+         *
+         * @param[in] ouput: Pointer to the output stream.
+         * @param[in] err_output: Pointer to the error output stream.
          **********************************************************************************************************************/
-        void set_log_to_console();
+        void set_log_to_stream(std::ostream* ouput, std::ostream* err_output);
 
         /***********************************************************************************************************************
          * @brief: Sets the logger to log to a file. This also clears the current held console log information if any.

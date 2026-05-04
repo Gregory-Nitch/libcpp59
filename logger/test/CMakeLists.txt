@@ -1,5 +1,5 @@
 # Set cmake version
-cmake_minimum_required(VERSION 4.3.1)
+cmake_minimum_required(VERSION 4.2.3)
 
 #Set project name, version, description
 project(logger_test_suite VERSION 1.0.0 DESCRIPTION "libcpp59 logger unit tests." LANGUAGES CXX)

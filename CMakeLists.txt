@@ -1,5 +1,5 @@
 # Set cmake version
-cmake_minimum_required(VERSION 4.3.1)
+cmake_minimum_required(VERSION 4.2.3)
 
 #Set project name, version, description
 project(libcpp59 VERSION 1.0.0 DESCRIPTION "libcpp59 libraries" LANGUAGES CXX)
@@ -24,11 +24,13 @@ add_compile_options(
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
 if(build_type STREQUAL "debug")
-  add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
-  add_link_options(-fsanitize=address) # Linker needs ASan too
+  add_compile_options(-g -fno-omit-frame-pointer)
 elseif(build_type STREQUAL "release")
   add_compile_options(-O3 -D_FORTIFY_SOURCE=2)
   add_link_options(-Wl,-z,relro -Wl,-z,now)
+elseif(build_type STREQUAL "asan")
+  add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address) # Linker needs ASan too
 else()
   message(FATAL_ERROR "Invalid build type: use -DCMAKE_BUILD_TYPE=Release or Debug")
 endif()
@@ -45,12 +47,12 @@ add_subdirectory(logger)
 
 # Add test suite with valgrind -> # -s = show suppressed errors
 add_test(NAME test_logger
-    COMMAND valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose -s
+    COMMAND valgrind --leak-check=full --error-exitcode=1 --show-leak-kinds=all --track-origins=yes --verbose -s
     $<TARGET_FILE:test_logger>
 )
-set_tests_properties(test_logger
-    PROPERTIES PASS_REGULAR_EXPRESSION
-    ".*in use at exit: 0 bytes in 0 blocks.*0 errors from 0 contexts.*suppressed: 0 from 0.*"
+set_tests_properties(test_logger PROPERTIES
+    PASS_REGULAR_EXPRESSION "ERROR SUMMARY: 0 errors from 0 contexts"
+    FAIL_REGULAR_EXPRESSION "TEST FAILURE:;ERROR SUMMARY: [1-9]"
 )
 
 

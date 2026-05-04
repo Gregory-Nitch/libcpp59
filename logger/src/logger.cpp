@@ -40,6 +40,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <format>
 
 
 /*
@@ -58,7 +59,7 @@ namespace libcpp59
      * @brief: Set of strings that are matched by index to @log_level. Only used internally.
      * @see log_level
      **********************************************************************************************************************/
-    static const char* level_to_strings[] = { "[DEBUG]: ", "[INFO]: ", "[WARN]: ", "[ERR]: " };
+    static const char* level_to_strings[] = { "[DEBUG]", "[INFO]", "[WARN]", "[ERR]" };
 
 /*
 ************************************************************************************************************************
@@ -99,13 +100,14 @@ namespace libcpp59
 
         std::ostream& out = (level == log_level::ERR) ? *m_err_output : *m_output;
 
-        out << level_to_strings[static_cast<int>(level)]
-            << location.file_name() << ":"
-            << location.function_name() << ":"
-            << location.line() << ": "
-            << message << '\n';
+        out << std::format("{}:{}:{}:{}: {}\n",
+            level_to_strings[static_cast<int>(level)],
+            location.file_name(),
+            location.function_name(),
+            location.line(),
+            message);
 
-        if (level >= log_level::WARN) {
+        if (level >= m_log_level) {
             out.flush();
         }
     }
@@ -121,12 +123,12 @@ namespace libcpp59
         m_log_level = level;
     }
 
-    void logger::set_log_to_console()
+    void logger::set_log_to_stream(std::ostream* output, std::ostream* err_output)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_output_file.reset();
-        m_output = &std::cout;
-        m_err_output = &std::cerr;
+        m_output = output;
+        m_err_output = err_output;
     }
 
     void logger::set_log_to_file(std::string const & output_path)
