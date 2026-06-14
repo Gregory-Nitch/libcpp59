@@ -33,15 +33,14 @@
 ========================================================================================================================
 */
 
+#include <filesystem>
+#include <format>
+#include <fstream>
 #include <iostream>
-#include <string>
+#include <memory>
 #include <mutex>
 #include <source_location>
-#include <filesystem>
-#include <fstream>
-#include <memory>
-#include <format>
-
+#include <string>
 
 /*
 ========================================================================================================================
@@ -51,15 +50,14 @@
 
 #include "logger.hpp"
 
-
 namespace libcpp59
 {
-    /***********************************************************************************************************************
-     * @level_to_strings
-     * @brief: Set of strings that are matched by index to @log_level. Only used internally.
-     * @see log_level
-     **********************************************************************************************************************/
-    static const char* level_to_strings[] = { "[DEBUG]", "[INFO]", "[WARN]", "[ERR]" };
+/***********************************************************************************************************************
+ * @level_to_strings
+ * @brief: Set of strings that are matched by index to @log_level. Only used internally.
+ * @see log_level
+ **********************************************************************************************************************/
+static const char* level_to_strings[] = {"[DEBUG]", "[INFO]", "[WARN]", "[ERR]"};
 
 /*
 ************************************************************************************************************************
@@ -67,75 +65,79 @@ namespace libcpp59
 ************************************************************************************************************************
 */
 
+logger::logger() : m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO)
+{
+}
 
-    logger::logger() : m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO) {}
+logger::logger(std::ostream* output, std::ostream* err_output)
+    : m_output(output), m_err_output(err_output), m_log_level(log_level::INFO)
+{
+}
 
-    logger::logger(std::ostream* output, std::ostream* err_output) :
-    m_output(output), m_err_output(err_output), m_log_level(log_level::INFO) {}
+logger::logger(std::string const& output_path)
+    : m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO)
+{
+    set_log_to_file_internal(output_path);
+}
 
+logger::logger(std::string const& output_path, log_level level)
+    : m_output(&std::cout), m_err_output(&std::cerr), m_log_level(level)
+{
+    set_log_to_file_internal(output_path);
+}
 
-    logger::logger(std::string const & output_path) :
-    m_output(&std::cout), m_err_output(&std::cerr), m_log_level(log_level::INFO)
+logger::~logger()
+{
+    flush_internal();
+}
+
+void logger::log(log_level level, std::string const& message, std::source_location const& location)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    if (level == log_level::OFF || level < m_log_level)
+        return;
+
+    std::ostream& out = (level == log_level::ERR) ? *m_err_output : *m_output;
+
+    out << std::format("{}:{}:{}:{}: {}\n",
+                       level_to_strings[static_cast<int>(level)],
+                       location.file_name(),
+                       location.function_name(),
+                       location.line(),
+                       message);
+
+    if (level >= m_log_level)
     {
-        set_log_to_file_internal(output_path);
+        out.flush();
     }
+}
 
-    logger::logger(std::string const & output_path, log_level level) :
-    m_output(&std::cout), m_err_output(&std::cerr), m_log_level(level)
-    {
-        set_log_to_file_internal(output_path);
-    }
+void logger::flush()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    flush_internal();
+}
 
-    logger::~logger()
-    {
-        flush_internal();
-    }
+void logger::set_log_level(log_level level)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_log_level = level;
+}
 
-    void logger::log(log_level level, std::string const & message, std::source_location const & location)
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
+void logger::set_log_to_stream(std::ostream* output, std::ostream* err_output)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_output_file.reset();
+    m_output = output;
+    m_err_output = err_output;
+}
 
-        if (level == log_level::OFF || level < m_log_level)
-                return;
-
-        std::ostream& out = (level == log_level::ERR) ? *m_err_output : *m_output;
-
-        out << std::format("{}:{}:{}:{}: {}\n",
-            level_to_strings[static_cast<int>(level)],
-            location.file_name(),
-            location.function_name(),
-            location.line(),
-            message);
-
-        if (level >= m_log_level) {
-            out.flush();
-        }
-    }
-
-    void logger::flush() {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        flush_internal();
-    }
-
-    void logger::set_log_level(log_level level)
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_log_level = level;
-    }
-
-    void logger::set_log_to_stream(std::ostream* output, std::ostream* err_output)
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_output_file.reset();
-        m_output = output;
-        m_err_output = err_output;
-    }
-
-    void logger::set_log_to_file(std::string const & output_path)
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        set_log_to_file_internal(output_path);
-    }
+void logger::set_log_to_file(std::string const& output_path)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    set_log_to_file_internal(output_path);
+}
 
 /*
 ************************************************************************************************************************
@@ -143,31 +145,33 @@ namespace libcpp59
 ************************************************************************************************************************
 */
 
-    void logger::set_log_to_file_internal(std::string const & output_path)
+void logger::set_log_to_file_internal(std::string const& output_path)
+{
+    std::filesystem::path path(output_path);
+
+    if (!path.parent_path().empty() && !std::filesystem::exists(path.parent_path()))
     {
-        std::filesystem::path path(output_path);
-
-        if (!path.parent_path().empty() && !std::filesystem::exists(path.parent_path()))
-        {
-            std::filesystem::create_directories(path.parent_path());
-        }
-
-        auto new_file = std::make_unique<std::ofstream>(output_path, std::ios::app);
-
-        if (!new_file->is_open())
-        {
-            throw std::runtime_error("ERR: Failed to open log file: " + output_path);
-        }
-
-        m_output_file = std::move(new_file);
-        m_output = m_output_file.get();
-        m_err_output = m_output_file.get();
+        std::filesystem::create_directories(path.parent_path());
     }
 
-    void logger::flush_internal()
+    auto new_file = std::make_unique<std::ofstream>(output_path, std::ios::app);
+
+    if (!new_file->is_open())
     {
-        if (m_output) m_output->flush();
-        if (m_err_output && m_err_output != m_output) m_err_output->flush();
+        throw std::runtime_error("ERR: Failed to open log file: " + output_path);
     }
 
+    m_output_file = std::move(new_file);
+    m_output = m_output_file.get();
+    m_err_output = m_output_file.get();
 }
+
+void logger::flush_internal()
+{
+    if (m_output)
+        m_output->flush();
+    if (m_err_output && m_err_output != m_output)
+        m_err_output->flush();
+}
+
+} // namespace libcpp59

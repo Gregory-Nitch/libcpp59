@@ -33,12 +33,12 @@
 ************************************************************************************************************************
 */
 
+#include <cstdlib>
+#include <filesystem>
+#include <format>
+#include <sstream>
 #include <string>
 #include <unordered_map>
-#include <cstdlib>
-#include <sstream>
-#include <format>
-#include <filesystem>
 
 /*
 ************************************************************************************************************************
@@ -178,16 +178,15 @@ int test_constructor_with_file_and_level()
 
 int main()
 {
-    std::unordered_map<std::string, int(*)(void)> tests =
-        {
-            {"test_default_ctor_and_console", test_default_ctor_and_console},
-            {"test_set_log_level", test_set_log_level},
-            {"test_log_to_file", test_log_to_file},
-            {"test_set_log_to_stream", test_set_log_to_stream},
-            {"test_set_log_to_file", test_set_log_to_file},
-            {"test_constructor_with_file_and_level", test_constructor_with_file_and_level},
+    std::unordered_map<std::string, int (*)(void)> tests = {
+        {"test_default_ctor_and_console", test_default_ctor_and_console},
+        {"test_set_log_level", test_set_log_level},
+        {"test_log_to_file", test_log_to_file},
+        {"test_set_log_to_stream", test_set_log_to_stream},
+        {"test_set_log_to_file", test_set_log_to_file},
+        {"test_constructor_with_file_and_level", test_constructor_with_file_and_level},
 
-        };
+    };
     std::unordered_map<std::string, int> results;
 
     for (const auto& [name, func] : tests)
@@ -202,7 +201,7 @@ int main()
     for (const auto& [name, result] : results)
         std::cerr << "TEST FAILURE: " << name << std::endl;
 
-    if(!results.empty())
+    if (!results.empty())
         return EXIT_FAILURE;
 
     return EXIT_SUCCESS;

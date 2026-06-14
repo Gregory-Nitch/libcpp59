@@ -1,0 +1,18 @@
+BasedOnStyle: LLVM
+Language: Cpp
+ColumnLimit: 120
+IndentWidth: 4
+UseTab: Never
+
+PointerAlignment: Left
+BreakBeforeBraces: Allman
+
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+
+BinPackArguments: false
+BinPackParameters: false
+
+SortIncludes: true
+NamespaceIndentation: None
